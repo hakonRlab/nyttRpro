@@ -1,0 +1,839 @@
+---
+title: "KoKult_G1_ctrl_rock"
+author: "Håkon"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+### Mono- og ko-kultur med PC-3 GFP og PC12Adh celler.
+Generasjon G1 er celler tracket fra mitosis til mitosis, og modercellene er de som har blitt tracket fra t=0.  
+
+#### Kontroll  
+
+* PC12Adh_mono_G1_ctrl n = 76 celler (Antall celler tracket fra t0 n= 40)    
+* PC12Adh_co_G1_ctrl n = 120 celler  (Antall celler tracket fra t0 n= 63)  
+* PC3GFP_mono_G1_ctrl n = 86 celler  (Antall celler tracket fra t0 n= 68)  
+* PC3GFP_co_G1_ctrl n = 33 celler  (Antall celler tracket fra t0 n= 76)  
+
+#### 30uM Rock hemmer (Y-27632)  
+
+* PC12Adh_mono_G1_rock n = 204 celler  (Antall celler tracket fra t0 n= 108)  
+* PC12Adh_co_G1_rock n = 156 celler  (Antall celler tracket fra t0 n= 91)  
+* PC3GFP_mono_G1_rock n = 6 celler  (Antall celler tracket fra t0 n= 92)  
+* PC3GFP_co_G1_rock n = 128 celler  (Antall celler tracket fra t0 n= 92)  
+
+```{r setup, include=FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(readxl)
+library(DescTools)
+##CelltrackR
+library(celltrackR)
+library(pracma)
+library(uwot)
+library(gtsummary)
+library(kableExtra)
+library(ggridges)
+library(wesanderson)
+library(scales)
+library(FSA)
+library(ggstatsplot)
+library(PMCMRplus)
+library(patchwork)
+library(superheat)
+library(ggthemes)
+library(ggsci)
+library(bayesplot)
+## cran.r-project.org/web/packages/celltrackR/vignettes
+
+```
+
+```{r load tracking results, warning=FALSE, include=FALSE}
+
+PC12Adh_co_ctrl_G1_Tracks_A4_3 <- read.table("~/Documents/Arbeidskar/KoBio/kobioTracker/PC12Adh_co_ctrl_G1_tracks_A4_3.dat", header=TRUE, quote="\"")
+
+
+PC12Adh_co_ctrl_G1_A4_3 <- as.tracks(PC12Adh_co_ctrl_G1_Tracks_A4_3,
+                         id.column = 4,
+                         time.column = 3,
+                         pos.columns = c(1,2),
+                         scale.t = 1,
+                         scale.pos = 1)
+
+save(PC12Adh_co_ctrl_G1_A4_3, file = "PC12Adh_co_ctrl_G1_A4_3")
+
+PC12Adh_co_ctrl_G1_Tracks_A4_1 <- read.table("~/Documents/Arbeidskar/KoBio/kobioTracker/PC12Adh_co_ctrl_G1_tracks_A4_1.dat", header=TRUE, quote="\"")
+
+
+PC12Adh_co_ctrl_G1_A4_1 <- as.tracks(PC12Adh_co_ctrl_G1_Tracks_A4_1,
+                         id.column = 4,
+                         time.column = 3,
+                         pos.columns = c(1,2),
+                         scale.t = 1,
+                         scale.pos = 1)
+
+save(PC12Adh_co_ctrl_G1_A4_1, file = "PC12Adh_co_ctrl_G1_A4_1")
+
+PC12Adh_co_ctrl_G1_Tracks_A4_5 <- read.table("~/Documents/Arbeidskar/KoBio/kobioTracker/PC12Adh_co_ctrl_G1_tracks_A4_5.dat", header=TRUE, quote="\"")
+
+
+PC12Adh_co_ctrl_G1_A4_5 <- as.tracks(PC12Adh_co_ctrl_G1_Tracks_A4_5,
+                         id.column = 4,
+                         time.column = 3,
+                         pos.columns = c(1,2),
+                         scale.t = 1,
+                         scale.pos = 1)
+
+save(PC12Adh_co_ctrl_G1_A4_5, file = "PC12Adh_co_ctrl_G1_A4_5")
+
+PC12coG1_A4_3 <- PC12Adh_co_ctrl_G1_A4_3
+names(PC12coG1_A4_3) <- paste0("PC12Adh_coG1_A4_3", names(PC12coG1_A4_3))
+PC12coG1_A4_5 <- PC12Adh_co_ctrl_G1_A4_5
+names(PC12coG1_A4_5) <- paste0("PC12Adh_coG1_A4_5", names(PC12coG1_A4_5))
+PC12coG1_A4_1 <- PC12Adh_co_ctrl_G1_A4_1
+names(PC12coG1_A4_1) <- paste0("PC12Adh_coG1_A4_1", names(PC12coG1_A4_1))
+
+
+
+PC12Adh_coG1_ctrl_All <- rbind(PC12coG1_A4_1, PC12coG1_A4_3, PC12coG1_A4_5)
+
+save(PC12Adh_coG1_ctrl_All, file = "PC12Adh_coG1_ctrl_All")
+
+
+###
+
+PC3GFP_co_ctrl_G1_Tracks_A4_5 <- read.table("~/Documents/Arbeidskar/KoBio/kobioTracker/PC3GFP_co_ctrl_G1_tracks_A4_5.dat", header=TRUE, quote="\"")
+
+
+PC3GFP_co_ctrl_G1_A4_5 <- as.tracks(PC3GFP_co_ctrl_G1_Tracks_A4_5,
+                         id.column = 4,
+                         time.column = 3,
+                         pos.columns = c(1,2),
+                         scale.t = 1,
+                         scale.pos = 1)
+
+save(PC3GFP_co_ctrl_G1_A4_5, file = "PC3GFP_co_ctrl_G1_A4_5")
+
+PC3GFP_co_ctrl_G1_Tracks_A4_3 <- read.table("~/Documents/Arbeidskar/KoBio/kobioTracker/PC3GFP_co_ctrl_G1_tracks_A4_3.dat", header=TRUE, quote="\"")
+
+
+PC3GFP_co_ctrl_G1_A4_3 <- as.tracks(PC3GFP_co_ctrl_G1_Tracks_A4_3,
+                         id.column = 4,
+                         time.column = 3,
+                         pos.columns = c(1,2),
+                         scale.t = 1,
+                         scale.pos = 1)
+
+save(PC3GFP_co_ctrl_G1_A4_3, file = "PC3GFP_co_ctrl_G1_A4_3")
+
+PC3GFP_co_ctrl_G1_Tracks_A4_1 <- read.table("~/Documents/Arbeidskar/KoBio/kobioTracker/PC3GFP_co_ctrl_G1_tracks_A4_1.dat", header=TRUE, quote="\"")
+
+
+PC3GFP_co_ctrl_G1_A4_1 <- as.tracks(PC3GFP_co_ctrl_G1_Tracks_A4_1,
+                         id.column = 4,
+                         time.column = 3,
+                         pos.columns = c(1,2),
+                         scale.t = 1,
+                         scale.pos = 1)
+
+save(PC3GFP_co_ctrl_G1_A4_1, file = "PC3GFP_co_ctrl_G1_A4_1")
+
+PC3GFPcoG1_A4_3 <- PC3GFP_co_ctrl_G1_A4_3
+names(PC3GFPcoG1_A4_3) <- paste0("PC3GFP_coG1_A4_3", names(PC3GFPcoG1_A4_3))
+PC3GFPcoG1_A4_5 <- PC3GFP_co_ctrl_G1_A4_5
+names(PC3GFPcoG1_A4_5) <- paste0("PC3GFP_coG1_A4_5", names(PC3GFPcoG1_A4_5))
+PC3GFPcoG1_A4_1 <- PC3GFP_co_ctrl_G1_A4_1
+names(PC3GFPcoG1_A4_1) <- paste0("PC3GFP_coG1_A4_1", names(PC3GFPcoG1_A4_1))
+
+PC3GFP_coG1_ctrl_All <- rbind(PC3GFPcoG1_A4_1, PC3GFPcoG1_A4_3, PC3GFPcoG1_A4_5)
+
+save(PC3GFP_coG1_ctrl_All, file = "PC3GFP_coG1_ctrl_All")
+
+####
+
+
+PC3GFP_mono_ctrl_G1_Tracks_A1_2 <- read.table("~/Documents/Arbeidskar/KoBio/kobioTracker/PC3_GFP_ctrl_mono_G1_tracks_A1_2.dat", header=TRUE, quote="\"")
+
+PC3GFP_mono_ctrl_G1_A1_2 <- as.tracks(PC3GFP_mono_ctrl_G1_Tracks_A1_2,
+                         id.column = 4,
+                         time.column = 3,
+                         pos.columns = c(1,2),
+                         scale.t = 1,
+                         scale.pos = 1)
+
+save(PC3GFP_mono_ctrl_G1_A1_2, file = "PC3GFP_mono_ctrl_G1_A1_2")
+
+
+PC3GFP_mono_ctrl_G1_Tracks_A1_3 <- read.table("~/Documents/Arbeidskar/KoBio/kobioTracker/PC3_GFP_ctrl_mono_G1_tracks_A1_3.dat", header=TRUE, quote="\"")
+
+PC3GFP_mono_ctrl_G1_A1_3 <- as.tracks(PC3GFP_mono_ctrl_G1_Tracks_A1_3,
+                         id.column = 4,
+                         time.column = 3,
+                         pos.columns = c(1,2),
+                         scale.t = 1,
+                         scale.pos = 1)
+
+save(PC3GFP_mono_ctrl_G1_A1_3, file = "PC3GFP_mono_ctrl_G1_A1_3")
+
+
+
+PC3GFPmonoG1_A1_2 <- PC3GFP_mono_ctrl_G1_A1_2
+names(PC3GFPmonoG1_A1_2) <- paste0("PC3GFP_monoG1_A1_2", names(PC3GFPmonoG1_A1_2))
+PC3GFPmonoG1_A1_3 <- PC3GFP_mono_ctrl_G1_A1_3
+names(PC3GFPmonoG1_A1_3) <- paste0("PC3GFP_monoG1_A1_3", names(PC3GFPmonoG1_A1_3))
+
+PC3GFP_monoG1_ctrl_All <- rbind(PC3GFPmonoG1_A1_2, PC3GFPmonoG1_A1_3)
+
+save(PC3GFP_monoG1_ctrl_All, file = "PC3GFP_monoG1_ctrl_All")
+
+#####
+
+PC12Adh_mono_ctrl_G1_Tracks_C7_1 <- read.table("~/Documents/Arbeidskar/KoBio/kobioTracker/PC12Adh_ctrl_mono_G1_tracks_C7_1.dat", header=TRUE, quote="\"")
+
+
+PC12Adh_mono_ctrl_G1_C7_1 <- as.tracks(PC12Adh_mono_ctrl_G1_Tracks_C7_1,
+                         id.column = 4,
+                         time.column = 3,
+                         pos.columns = c(1,2),
+                         scale.t = 1,
+                         scale.pos = 1)
+
+save(PC12Adh_mono_ctrl_G1_C7_1, file = "PC12Adh_mono_ctrl_G1_C7_1")
+
+PC12Adh_mono_ctrl_G1_Tracks_C7_2 <- read.table("~/Documents/Arbeidskar/KoBio/kobioTracker/PC12Adh_ctrl_mono_G1_tracks_C7_2.dat", header=TRUE, quote="\"")
+
+
+PC12Adh_mono_ctrl_G1_C7_2 <- as.tracks(PC12Adh_mono_ctrl_G1_Tracks_C7_2,
+                         id.column = 4,
+                         time.column = 3,
+                         pos.columns = c(1,2),
+                         scale.t = 1,
+                         scale.pos = 1)
+
+save(PC12Adh_mono_ctrl_G1_C7_2, file = "PC12Adh_mono_ctrl_G1_C7_2")
+
+PC12monoG1_C7_1 <- PC12Adh_mono_ctrl_G1_C7_1
+names(PC12monoG1_C7_1) <- paste0("PC12Adh_monoG1_C7_1", names(PC12monoG1_C7_1))
+PC12monoG1_C7_2 <- PC12Adh_mono_ctrl_G1_C7_2
+names(PC12monoG1_C7_2) <- paste0("PC12Adh_monoG1_C7_2", names(PC12monoG1_C7_2))
+
+
+
+PC12Adh_monoG1_ctrl_All <- rbind(PC12monoG1_C7_1, PC12monoG1_C7_2)
+
+save(PC12Adh_monoG1_ctrl_All, file = "PC12Adh_monoG1_ctrl_All")
+
+
+```
+
+```{r duration, echo = FALSE}
+load("PC12Adh_coG1_ctrl_All")
+load("PC3GFP_coG1_ctrl_All")
+load("PC12Adh_monoG1_ctrl_All")
+load("PC3GFP_monoG1_ctrl_All")
+
+PC12Adh_coG1_ctrl_AllT <- as.tracks(PC12Adh_coG1_ctrl_All)
+PC3GFP_coG1_ctrl_AllT <- as.tracks(PC3GFP_coG1_ctrl_All)
+PC12Adh_monoG1_ctrl_AllT <- as.tracks(PC12Adh_monoG1_ctrl_All)
+PC3GFP_monoG1_ctrl_AllT <- as.tracks(PC3GFP_monoG1_ctrl_All)
+
+PC12Adh_coG1_ctrl_All_duration <- sapply(PC12Adh_coG1_ctrl_All, duration)
+dPC12Adh_coG1_ctrl_All_duration <- data.frame(cells = "PC12Adh_coG1_ctrl_All", duration = PC12Adh_coG1_ctrl_All_duration)
+
+PC3GFP_coG1_ctrl_All_duration <- sapply(PC3GFP_coG1_ctrl_AllT, duration)
+dPC3GFP_coG1_ctrl_All_duration <- data.frame(cells = "PC3GFP_coG1_ctrl_All", duration = PC3GFP_coG1_ctrl_All_duration)
+
+PC12Adh_monoG1_ctrl_All_duration <- sapply(PC12Adh_monoG1_ctrl_All, duration)
+dPC12Adh_monoG1_ctrl_All_duration <- data.frame(cells = "PC12Adh_monoG1_ctrl_All", duration = PC12Adh_monoG1_ctrl_All_duration)
+
+PC3GFP_monoG1_ctrl_All_duration <- sapply(PC3GFP_monoG1_ctrl_All, duration)
+dPC3GFP_monoG1_ctrl_All_duration <- data.frame(cells = "PC3GFP_monoG1_ctrl_All", duration = PC3GFP_monoG1_ctrl_All_duration)
+
+
+ddG1_ctrl_All_duration <- rbind(dPC12Adh_coG1_ctrl_All_duration, dPC3GFP_coG1_ctrl_All_duration, dPC3GFP_monoG1_ctrl_All_duration, dPC12Adh_monoG1_ctrl_All_duration)
+
+save(ddG1_ctrl_All_duration, file = "ddG1_ctrl_All_duration")
+
+ggplot(ddG1_ctrl_All_duration, aes(duration, fill = cells), color = cells)+
+  geom_density(alpha = 0.5)+
+  coord_cartesian(xlim = c(0,70))+
+  labs( x = "Time (h)")+
+  theme_classic()
+
+
+
+```
+
+```{r track length, echo = FALSE}
+
+PC12Adh_coG1_ctrl_All_Tlength <- sapply(PC12Adh_coG1_ctrl_AllT, trackLength)
+dPC12Adh_coG1_ctrl_All_Tlength <- data.frame(cells = "PC12Adh_coG1_ctrl_All", Tracklength = PC12Adh_coG1_ctrl_All_Tlength)
+
+PC3GFP_coG1_ctrl_All_Tlength <- sapply(PC3GFP_coG1_ctrl_AllT, trackLength)
+dPC3GFP_coG1_ctrl_All_Tlength <- data.frame(cells = "PC3GFP_coG1_ctrl_All", Tracklength = PC3GFP_coG1_ctrl_All_Tlength)
+
+PC12Adh_monoG1_ctrl_All_Tlength <- sapply(PC12Adh_monoG1_ctrl_AllT, trackLength)
+dPC12Adh_monoG1_ctrl_All_Tlenght <- data.frame(cells = "PC12Adh_monoG1_ctrl_All", Tracklength = PC12Adh_monoG1_ctrl_All_Tlength)
+
+PC3GFP_monoG1_ctrl_All_Tlength <- sapply(PC3GFP_monoG1_ctrl_AllT, trackLength)
+dPC3GFP_monoG1_ctrl_All_Tlength <- data.frame(cells = "PC3GFP_monoG1_ctrl_All", Tracklength = PC3GFP_monoG1_ctrl_All_Tlength)
+
+
+ddG1_ctrl_All_Tlength <- rbind(dPC12Adh_coG1_ctrl_All_Tlength, dPC3GFP_coG1_ctrl_All_Tlength, dPC3GFP_monoG1_ctrl_All_Tlength, dPC12Adh_monoG1_ctrl_All_Tlenght)
+
+save(ddG1_ctrl_All_Tlength, file = "ddG1_ctrl_All_Tlength")
+
+ggplot(ddG1_ctrl_All_Tlength, aes(Tracklength, fill = cells), color = cells)+
+  geom_density(alpha = 0.5)+
+  coord_cartesian(xlim = c(0,3000))+
+  labs( x = "Distance (microm)")+
+  theme_classic()
+
+
+
+```
+
+```{r speed, echo = FALSE}
+
+PC12Adh_coG1_ctrl_All_speed <- sapply(PC12Adh_coG1_ctrl_AllT, speed)
+dPC12Adh_coG1_ctrl_All_speed <- data.frame(cells = "PC12Adh_coG1_ctrl_All", speed = PC12Adh_coG1_ctrl_All_speed)
+
+PC3GFP_coG1_ctrl_All_speed <- sapply(PC3GFP_coG1_ctrl_AllT, speed)
+dPC3GFP_coG1_ctrl_All_speed <- data.frame(cells = "PC3GFP_coG1_ctrl_All", speed = PC3GFP_coG1_ctrl_All_speed)
+
+PC12Adh_monoG1_ctrl_All_speed <- sapply(PC12Adh_monoG1_ctrl_AllT, speed)
+dPC12Adh_monoG1_ctrl_All_speed <- data.frame(cells = "PC12Adh_monoG1_ctrl_All", speed = PC12Adh_monoG1_ctrl_All_speed)
+
+PC3GFP_monoG1_ctrl_All_speed <- sapply(PC3GFP_monoG1_ctrl_AllT, speed)
+dPC3GFP_monoG1_ctrl_All_speed <- data.frame(cells = "PC3GFP_monoG1_ctrl_All", speed = PC3GFP_monoG1_ctrl_All_speed)
+
+
+ddG1_ctrl_All_speed <- rbind(dPC12Adh_coG1_ctrl_All_speed, dPC3GFP_coG1_ctrl_All_speed, dPC3GFP_monoG1_ctrl_All_speed,
+                       dPC12Adh_monoG1_ctrl_All_speed)
+
+save(ddG1_ctrl_All_speed, file = "ddG1_ctrl_All_speed")
+
+ggplot(ddG1_ctrl_All_speed, aes(speed, fill = cells), color = cells)+
+  geom_density(aes(y=..count..),alpha = 0.5)+
+  #geom_histogram()
+  coord_cartesian(xlim = c(0,100))+
+  scale_fill_manual(values = wes_palette("Darjeeling2"))+
+  labs( x = "speed (micron/h)")+
+  theme_classic()
+
+
+
+```
+```{r speed boxplot, echo = FALSE}
+##Boxplot
+ddG1_ctrl_All_speed %>% 
+  #group_by(Treatment)%>%
+  ggplot(aes(cells, speed, fill = cells))+
+  geom_boxplot(outlier.shape = NA,width=0.5,position = position_dodge(width=0.7))+
+  geom_point(position =position_jitterdodge(jitter.width = 0.1,dodge.width = 0.7))+
+  #geom_point()+
+  #geom_jitter()+
+  #scale_y_continuous(trans = "log2")+
+  scale_fill_manual(values = wes_palette("Darjeeling2"))+
+  #scale_color_manual(labels=c("CSS","FCS","Iso"),values=c("black","grey40","grey60"))+
+  #xlab("Stimulation")+
+  ylab("Speed (um/h) \n")+
+  theme_classic(base_family = "Times New Roman",base_size = 12)+
+  scale_x_discrete(labels=c("PC12Adh co","PC12Adh mono","PC3GFP co", "PC3GFP mono"))+
+  #legend(legend = element_blank())+
+  theme(legend.position = "none",legend.text = element_text(margin = margin(r = 10, unit = "pt"),size = 14.5))+
+  theme(legend.title=element_blank())+
+  theme(axis.text.x=element_text(size=12,color="black"))+
+  theme(text=element_text(face="bold"))+
+  theme(axis.text.y=element_text(size=12,color="black"))
+```
+
+```{r speed table, echo = FALSE, warning = FALSE}
+library(DescTools)
+library(broom)
+
+test1 <- PostHocTest(aov(speed ~cells ,data = ddG1_ctrl_All_speed),method="hsd")
+#test1 <- DunnTest(speed ~ factor(cells) ,data = ddG1_rock_All_speed ,method="BH")
+test2 <- tidy(test1[[1]])
+test2 <- tidy(test2$x)
+test2 <- as.data.frame(test2$x)
+kbl(test2, booktabs = T) %>% 
+  kable_classic() %>% 
+  add_header_above(c("One-way ANOVA med Newman-Keuls post hoc test" = 5))
+
+```
+
+```{r Kruskal-Wallis,  echo=FALSE, warning = FALSE}
+D_test <- dunnTest(speed ~cells, data = ddG1_ctrl_All_speed, method = "holm")
+
+D_test <- as.data.frame(D_test$res)
+kbl(D_test, booktabs = T) %>% 
+  kable_classic() %>% 
+  add_header_above(c("Kruskal-Wallis rank sum test med Dunnet post hoc test" = 4))
+
+
+ggbetweenstats(data = ddG1_ctrl_All_speed, cells, speed,
+               type = "nonparametric",
+               plot.type = "box",
+               pairwise.comparisons = TRUE,
+               pairwise.display = "significant",
+               centrality.plotting = FALSE,
+               bf.message = FALSE)
+
+
+
+```
+
+#### Straightness blir også referert til som Directionality ratio (Displacement/Track Length)
+```{r straightness, echo = FALSE}
+
+PC12Adh_coG1_ctrl_All_stra <- sapply(PC12Adh_coG1_ctrl_AllT, straightness)
+dPC12Adh_coG1_ctrl_All_stra <- data.frame(cells = "PC12Adh_coG1_ctrl_All", straight = PC12Adh_coG1_ctrl_All_stra)
+
+PC3GFP_coG1_ctrl_All_stra <- sapply(PC3GFP_coG1_ctrl_AllT, straightness)
+dPC3GFP_coG1_ctrl_All_stra <- data.frame(cells = "PC3GFP_coG1_ctrl_All", straight = PC3GFP_coG1_ctrl_All_stra)
+
+PC12Adh_monoG1_ctrl_All_stra <- sapply(PC12Adh_monoG1_ctrl_AllT, straightness)
+dPC12Adh_monoG1_ctrl_All_stra <- data.frame(cells = "PC12Adh_monoG1_ctrl_All", straight = PC12Adh_monoG1_ctrl_All_stra)
+
+PC3GFP_monoG1_ctrl_All_stra <- sapply(PC3GFP_monoG1_ctrl_AllT, straightness)
+dPC3GFP_monoG1_ctrl_All_stra <- data.frame(cells = "PC3GFP_monoG1_ctrl_All", straight = PC3GFP_monoG1_ctrl_All_stra)
+
+
+ddG1_ctrl_All_stra <- rbind(dPC12Adh_coG1_ctrl_All_stra, dPC3GFP_coG1_ctrl_All_stra, dPC3GFP_monoG1_ctrl_All_stra,
+                       dPC12Adh_monoG1_ctrl_All_stra)
+
+save(ddG1_ctrl_All_stra, file = "ddG1_ctrl_All_stra")
+
+ggplot(ddG1_ctrl_All_stra, aes(straight, fill = cells), color = cells)+
+  geom_density(alpha = 0.5)+
+  coord_cartesian(xlim = c(0,1))+
+  labs( x = "Straightness")+
+  theme_classic()
+
+
+
+```
+
+```{r autocovariance ctrl 1, echo=FALSE, warning = FALSE}
+load("ddG1_ctrl_All_stra")
+
+ggplot(ddG1_ctrl_All_stra, aes(straight, fct_rev(cells), fill = cells))+
+  geom_density_ridges(scale = 4, alpha = 0.6)+
+  scale_fill_manual(values = wes_palette("Darjeeling2"))+
+  ylab("")+
+  theme_minimal()
+
+
+
+```
+
+```{r max displacement, echo = FALSE}
+
+PC12Adh_coG1_ctrl_All_maxDisp <- sapply(PC12Adh_coG1_ctrl_AllT, maxDisplacement)
+dPC12Adh_coG1_ctrl_All_maxDisp <- data.frame(cells = "PC12Adh_coG1_ctrl_All", maxDisp = PC12Adh_coG1_ctrl_All_maxDisp)
+
+PC3GFP_coG1_ctrl_All_maxDisp <- sapply(PC3GFP_coG1_ctrl_AllT, maxDisplacement)
+dPC3GFP_coG1_ctrl_All_maxDisp <- data.frame(cells = "PC3GFP_coG1_ctrl_All", maxDisp = PC3GFP_coG1_ctrl_All_maxDisp)
+
+PC12Adh_monoG1_ctrl_All_maxDisp <- sapply(PC12Adh_monoG1_ctrl_AllT, maxDisplacement)
+dPC12Adh_monoG1_ctrl_All_maxDisp <- data.frame(cells = "PC12Adh_monoG1_ctrl_All", maxDisp = PC12Adh_monoG1_ctrl_All_maxDisp)
+
+PC3GFP_monoG1_ctrl_All_maxDisp <- sapply(PC3GFP_monoG1_ctrl_AllT, maxDisplacement)
+dPC3GFP_monoG1_ctrl_All_maxDisp <- data.frame(cells = "PC3GFP_monoG1_ctrl_All", maxDisp = PC3GFP_monoG1_ctrl_All_maxDisp)
+
+
+ddG1_ctrl_All_maxDisp <- rbind(dPC12Adh_coG1_ctrl_All_maxDisp, dPC3GFP_coG1_ctrl_All_maxDisp, dPC3GFP_monoG1_ctrl_All_maxDisp, dPC12Adh_monoG1_ctrl_All_maxDisp)
+
+save(ddG1_ctrl_All_maxDisp, file = "ddG1_ctrl_All_maxDisp")
+
+ggplot(ddG1_ctrl_All_maxDisp, aes(maxDisp, fill = cells), color = cells)+
+  geom_density(aes(alpha = 0.5, y =..scaled..))+
+  coord_cartesian(xlim = c(0,300))+
+  labs( x = "Max Displacement")+
+  theme_classic()
+
+
+
+```
+
+```{r Autocovarience ctrl, echo=FALSE}
+
+PC12Adh_coG1_ctrl_All_dot <- aggregate(PC12Adh_coG1_ctrl_AllT, overallDot, FUN = "mean.se")
+PC12Adh_coG1_ctrl_All_dot$cells <- "PC12Adh_coG1_ctrl_All"
+PC12Adh_coG1_ctrl_All_dot$dt <- PC12Adh_coG1_ctrl_All_dot$i * timeStep(PC12Adh_coG1_ctrl_AllT)
+
+
+PC3GFP_coG1_ctrl_All_dot <- aggregate(PC3GFP_coG1_ctrl_AllT, overallDot, FUN = "mean.se")
+PC3GFP_coG1_ctrl_All_dot$cells <- "PC3GFP_coG1_ctrl_All"
+PC3GFP_coG1_ctrl_All_dot$dt <- PC3GFP_coG1_ctrl_All_dot$i * timeStep(PC3GFP_coG1_ctrl_AllT)
+
+PC12Adh_monoG1_ctrl_All_dot <- aggregate(PC12Adh_monoG1_ctrl_AllT, overallDot, FUN = "mean.se")
+PC12Adh_monoG1_ctrl_All_dot$cells <- "PC12Adh_monoG1_ctrl_All"
+PC12Adh_monoG1_ctrl_All_dot$dt <- PC12Adh_monoG1_ctrl_All_dot$i * timeStep(PC12Adh_monoG1_ctrl_AllT)
+
+PC3GFP_monoG1_ctrl_All_dot <- aggregate(PC3GFP_monoG1_ctrl_AllT, overallDot, FUN = "mean.se")
+PC3GFP_monoG1_ctrl_All_dot$cells <- "PC3GFP_monoG1_ctrl_All"
+PC3GFP_monoG1_ctrl_All_dot$dt <- PC3GFP_monoG1_ctrl_All_dot$i * timeStep(PC3GFP_monoG1_ctrl_AllT)
+
+dot_G1_ctrl_Alldata <- rbind(PC3GFP_monoG1_ctrl_All_dot, PC12Adh_coG1_ctrl_All_dot, PC3GFP_coG1_ctrl_All_dot, PC12Adh_monoG1_ctrl_All_dot)
+
+
+PC3GFP_monoG1_ctrl_All_dotN <- PC3GFP_monoG1_ctrl_All_dot
+PC3GFP_monoG1_ctrl_All_dotN[,2:4] <- PC3GFP_monoG1_ctrl_All_dotN[,2:4]/PC3GFP_monoG1_ctrl_All_dotN$mean[1]
+PC12Adh_coG1_ctrl_All_dotN <- PC12Adh_coG1_ctrl_All_dot
+PC12Adh_coG1_ctrl_All_dotN[,2:4] <- PC12Adh_coG1_ctrl_All_dotN[,2:4]/PC12Adh_coG1_ctrl_All_dotN$mean[1]
+PC3GFP_coG1_ctrl_All_dotN <- PC3GFP_coG1_ctrl_All_dot
+PC3GFP_coG1_ctrl_All_dotN[,2:4] <- PC3GFP_coG1_ctrl_All_dotN[,2:4]/PC3GFP_coG1_ctrl_All_dotN$mean[1]
+PC12Adh_monoG1_ctrl_All_dotN <- PC12Adh_monoG1_ctrl_All_dot
+PC12Adh_monoG1_ctrl_All_dotN[,2:4] <- PC12Adh_monoG1_ctrl_All_dotN[,2:4]/PC12Adh_monoG1_ctrl_All_dotN$mean[1]
+
+dotN_G1_ctrl_Alldata <- rbind(PC3GFP_monoG1_ctrl_All_dotN, PC12Adh_coG1_ctrl_All_dotN, PC3GFP_coG1_ctrl_All_dotN, PC12Adh_monoG1_ctrl_All_dotN)
+
+ggplot(dot_G1_ctrl_Alldata, aes(x = dt, y = mean, color = cells, fill = cells))+
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA)+
+  geom_line()+
+  geom_hline(yintercept = 0)+
+  labs(x = expression(paste(Delta, "t (hours)")),
+       y = "Autocovariance")+
+  coord_cartesian(xlim = c(0,1), ylim = c(-1, 20))+
+  theme_classic()+
+  ggtitle("Autocovarience")+
+  theme(axis.line.x = element_blank(), plot.title = element_text(hjust = 0.5))
+
+
+
+
+```
+
+#### Autocovariance  
+  beskriver hvor lenge cellene beveger seg i en bestemt retning, og er uavhengig av fart.
+
+```{r Normalized Autocovarience ctrl, echo=FALSE}
+PC3GFP_monoG1_ctrl_All_dotN <- PC3GFP_monoG1_ctrl_All_dot
+PC3GFP_monoG1_ctrl_All_dotN[,2:4] <- PC3GFP_monoG1_ctrl_All_dotN[,2:4]/PC3GFP_monoG1_ctrl_All_dotN$mean[1]
+PC12Adh_coG1_ctrl_All_dotN <- PC12Adh_coG1_ctrl_All_dot
+PC12Adh_coG1_ctrl_All_dotN[,2:4] <- PC12Adh_coG1_ctrl_All_dotN[,2:4]/PC12Adh_coG1_ctrl_All_dotN$mean[1]
+PC3GFP_coG1_ctrl_All_dotN <- PC3GFP_coG1_ctrl_All_dot
+PC3GFP_coG1_ctrl_All_dotN[,2:4] <- PC3GFP_coG1_ctrl_All_dotN[,2:4]/PC3GFP_coG1_ctrl_All_dotN$mean[1]
+PC12Adh_monoG1_ctrl_All_dotN <- PC12Adh_monoG1_ctrl_All_dot
+PC12Adh_monoG1_ctrl_All_dotN[,2:4] <- PC12Adh_monoG1_ctrl_All_dotN[,2:4]/PC12Adh_monoG1_ctrl_All_dotN$mean[1]
+
+dotN_G1_ctrl_Alldata <- rbind(PC3GFP_monoG1_ctrl_All_dotN, PC12Adh_coG1_ctrl_All_dotN, PC3GFP_coG1_ctrl_All_dotN, PC12Adh_monoG1_ctrl_All_dotN)
+
+save(dotN_G1_ctrl_Alldata, file = "dotN_G1_ctrl_Alldata")
+
+ggplot(dotN_G1_ctrl_Alldata, aes(x = dt, y = mean, color = cells, fill = cells))+
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA)+
+  geom_line()+
+  geom_hline(yintercept = 0)+
+  labs(x = expression(paste(Delta, "t (hours)")),
+       y = "Autocovariance")+
+  coord_cartesian(xlim = c(0,2), ylim = c(0, 1))+
+  theme_classic()+
+  ggtitle("Normalized Autocovarience")+
+  theme(axis.line.x = element_blank(), plot.title = element_text(hjust = 0.5))
+
+
+
+
+```
+
+
+
+```{r Mean Square Displacemnet ctrl log-log, echo = FALSE, warning=FALSE}
+
+PC12Adh_coG1_ctrl_AllT <- as.tracks(PC12Adh_coG1_ctrl_All)
+PC12Adh_coG1_ctrl_All_msd <- aggregate(PC12Adh_coG1_ctrl_AllT, squareDisplacement, FUN = "mean.se")
+PC12Adh_coG1_ctrl_All_msd$cells <- "PC12Adh_coG1_ctrl_All"
+PC12Adh_coG1_ctrl_All_msd$dt <- PC12Adh_coG1_ctrl_All_msd$i * timeStep(PC12Adh_coG1_ctrl_AllT)
+
+PC3GFP_coG1_ctrl_AllT <- as.tracks(PC3GFP_coG1_ctrl_All)
+PC3GFP_coG1_ctrl_All_msd <- aggregate(PC3GFP_coG1_ctrl_AllT, squareDisplacement, FUN = "mean.se")
+PC3GFP_coG1_ctrl_All_msd$cells <- "PC3GFP_coG1_ctrl_All"
+PC3GFP_coG1_ctrl_All_msd$dt <- PC3GFP_coG1_ctrl_All_msd$i * timeStep(PC3GFP_coG1_ctrl_AllT)
+
+PC12Adh_monoG1_ctrl_AllT <- as.tracks(PC12Adh_monoG1_ctrl_All)
+PC12Adh_monoG1_ctrl_All_msd <- aggregate(PC12Adh_monoG1_ctrl_AllT, squareDisplacement, FUN = "mean.se")
+PC12Adh_monoG1_ctrl_All_msd$cells <- "PC12Adh_monoG1_ctrl_All"
+PC12Adh_monoG1_ctrl_All_msd$dt <- PC12Adh_monoG1_ctrl_All_msd$i * timeStep(PC12Adh_monoG1_ctrl_AllT)
+
+PC3GFP_monoG1_ctrl_AllT <- as.tracks(PC3GFP_monoG1_ctrl_All)
+PC3GFP_monoG1_ctrl_All_msd <- aggregate(PC3GFP_monoG1_ctrl_AllT, squareDisplacement, FUN = "mean.se")
+PC3GFP_monoG1_ctrl_All_msd$cells <- "PC3GFP_monoG1_ctrl_All"
+PC3GFP_monoG1_ctrl_All_msd$dt <- PC3GFP_monoG1_ctrl_All_msd$i * timeStep(PC3GFP_monoG1_ctrl_AllT)
+
+msd_G1_ctrl_Alldata <- rbind(PC3GFP_monoG1_ctrl_All_msd,PC12Adh_coG1_ctrl_All_msd, PC3GFP_coG1_ctrl_All_msd, PC12Adh_monoG1_ctrl_All_msd)
+
+msd_G1_ctrl_Alldata <- msd_G1_ctrl_Alldata %>% mutate(dtmin = dt*60)
+msd_G1_ctrl_Alldata <- msd_G1_ctrl_Alldata %>% mutate(logmean = log10(mean))
+
+save(msd_G1_ctrl_Alldata, file ="msd_G1_ctrl_Alldata")
+
+ggplot(msd_G1_ctrl_Alldata, aes(x = dt, y = mean, color = cells, fill = cells))+
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5, color = NA)+
+  geom_line()+
+  labs(x = expression(paste(Delta,"t (h)")),
+       y = "Mean Square Displacement")+
+  coord_cartesian(xlim = c(0,10), ylim = c(0, 5000))+
+  #coord_trans(y="log10", x="log10")+
+  #scale_y_continuous(trans = "log10")+
+  #scale_x_continuous(trans="log10", limits = c(4,600))+
+  #xlim(log10(0),log10(10))+
+  #labs(title = "log-log plot")+
+  theme_classic()
+
+```
+
+### MSD
+* Stipla linje(- - -) representerer Ballistic/super diffusive bevegelse (slope (alfa) = 1)
+* Prikkete linje (...) representerer diffusive bevegelse (slope (alfa) = 2)
+* slope (alfa) < 1 blir beskrevet som sub-diffusive
+```{r Mean Square Displacemnet log-log, echo = FALSE, warning=FALSE}
+
+PC12Adh_coG1_ctrl_AllT <- as.tracks(PC12Adh_coG1_ctrl_All)
+PC12Adh_coG1_ctrl_All_msd <- aggregate(PC12Adh_coG1_ctrl_AllT, squareDisplacement, FUN = "mean.se")
+PC12Adh_coG1_ctrl_All_msd$cells <- "PC12Adh_coG1_ctrl_All"
+PC12Adh_coG1_ctrl_All_msd$dt <- PC12Adh_coG1_ctrl_All_msd$i * timeStep(PC12Adh_coG1_ctrl_AllT)
+
+PC3GFP_coG1_ctrl_AllT <- as.tracks(PC3GFP_coG1_ctrl_All)
+PC3GFP_coG1_ctrl_All_msd <- aggregate(PC3GFP_coG1_ctrl_AllT, squareDisplacement, FUN = "mean.se")
+PC3GFP_coG1_ctrl_All_msd$cells <- "PC3GFP_coG1_ctrl_All"
+PC3GFP_coG1_ctrl_All_msd$dt <- PC3GFP_coG1_ctrl_All_msd$i * timeStep(PC3GFP_coG1_ctrl_AllT)
+
+PC12Adh_monoG1_ctrl_AllT <- as.tracks(PC12Adh_monoG1_ctrl_All)
+PC12Adh_monoG1_ctrl_All_msd <- aggregate(PC12Adh_monoG1_ctrl_AllT, squareDisplacement, FUN = "mean.se")
+PC12Adh_monoG1_ctrl_All_msd$cells <- "PC12Adh_monoG1_ctrl_All"
+PC12Adh_monoG1_ctrl_All_msd$dt <- PC12Adh_monoG1_ctrl_All_msd$i * timeStep(PC12Adh_monoG1_ctrl_AllT)
+
+PC3GFP_monoG1_ctrl_AllT <- as.tracks(PC3GFP_monoG1_ctrl_All)
+PC3GFP_monoG1_ctrl_All_msd <- aggregate(PC3GFP_monoG1_ctrl_AllT, squareDisplacement, FUN = "mean.se")
+PC3GFP_monoG1_ctrl_All_msd$cells <- "PC3GFP_monoG1_ctrl_All"
+PC3GFP_monoG1_ctrl_All_msd$dt <- PC3GFP_monoG1_ctrl_All_msd$i * timeStep(PC3GFP_monoG1_ctrl_AllT)
+
+msd_G1_ctrl_Alldata <- rbind(PC3GFP_monoG1_ctrl_All_msd,PC12Adh_coG1_ctrl_All_msd, PC3GFP_coG1_ctrl_All_msd, PC12Adh_monoG1_ctrl_All_msd)
+
+msd_G1_ctrl_Alldata <- msd_G1_ctrl_Alldata %>% mutate(dtmin = dt*60)
+msd_G1_ctrl_Alldata <- msd_G1_ctrl_Alldata %>% mutate(logmean = log10(mean))
+
+save(msd_G1_ctrl_Alldata, file ="msd_G1_ctrl_Alldata")
+
+ggplot(msd_G1_ctrl_Alldata, aes(x = dtmin, y = mean, color = cells, fill = cells))+
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5, color = NA)+
+  geom_line()+
+  geom_abline(intercept = 0,slope = 1, linetype ="dashed")+
+  geom_abline(slope = 2, linetype ="dotted")+
+  labs(x = expression(paste(Delta,"t (min)")),
+       y = "Mean Square Displacement")+
+  #coord_cartesian(xlim = c(0,10), ylim = c(0, 5000))+
+  #coord_trans(y="log10", x="log10")+
+  scale_y_continuous(trans = "log10",
+                     breaks = trans_breaks("log10", function(x)10^x),
+                     labels = trans_format("log10", math_format(10^.x)))+
+  scale_x_continuous(trans="log10",  limits = c(4,600),
+                     breaks = trans_breaks("log10", function(x)10^x),
+                     labels = trans_format("log10", math_format(10^.x)))+
+  #xlim(log10(0),log10(10))+
+  labs(title = "log-log plot")+
+  theme_classic()
+
+```
+
+```{r lm model of MSD, echo=FALSE, warning=FALSE}
+load("msdAlfa")
+kbl(msdAlfa, booktabs = T) %>% 
+  kable_classic() %>% 
+  add_header_above(c("Slope (alfa) of log-log msd plot" = 3))
+```
+
+
+```{r msd rock log-log , echo=FALSE, warning=FALSE}
+load("msd_G1_rock_Alldata")
+
+ggplot(msd_G1_rock_Alldata, aes(x = dtmin, y = mean, color = cells, fill = cells))+
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA)+
+  geom_line()+
+  labs(x = expression(paste(Delta,"t (min)")),
+       y = "Mean Square Displacement")+
+  #coord_cartesian(xlim = c(0,10), ylim = c(0, 25000))+
+  scale_y_continuous(trans = "log10",
+                     breaks = trans_breaks("log10", function(x)10^x),
+                     labels = trans_format("log10", math_format(10^.x)))+
+  scale_x_continuous(trans="log10",  limits = c(4,600),
+                     breaks = trans_breaks("log10", function(x)10^x),
+                     labels = trans_format("log10", math_format(10^.x)))+
+  #xlim(log10(0),log10(10))+
+  labs(title = "log-log plot")+
+  theme_classic()
+
+```
+
+```{r msd rock , echo=FALSE, warning=FALSE}
+load("msd_G1_rock_Alldata")
+
+ggplot(msd_G1_rock_Alldata, aes(x = dt, y = mean, color = cells, fill = cells))+
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA)+
+  geom_line()+
+  labs(x = expression(paste(Delta,"t (h)")),
+       y = "Mean Square Displacement")+
+  coord_cartesian(xlim = c(0,10), ylim = c(0, 25000))+
+  #scale_y_continuous(trans = "log10")+
+  #scale_x_continuous(trans="log10", limits = c(4,600))+
+  #xlim(log10(0),log10(10))+
+  #labs(title = "log-log plot")+
+  theme_classic()
+
+```
+
+```{r Time rock, echo=FALSE}
+load("ddG1_rock_All_Time")
+
+ggplot(ddG1_rock_All_Time, aes(Time, fill = cells), color = cells)+
+  geom_density(alpha = 0.25)+
+  labs( x = "Time (h) ")+
+  theme_classic()
+
+
+```
+
+```{r Length rock, echo=FALSE}
+load("ddG1_rock_All_Length")
+
+ggplot(ddG1_rock_All_Length, aes(Length, fill = cells), color = cells)+
+  geom_density(alpha = 0.25)+
+  #coord_cartesian(xlim = c(0,100))+
+  labs( x = "Track length (micron)")+
+  theme_classic()
+
+
+
+```
+
+```{r speed rock, echo=FALSE, warning = FALSE}
+load("ddG1_rock_All_speed")
+
+ggplot(ddG1_rock_All_speed, aes(speed, fct_rev(cells), fill = cells))+
+  geom_density_ridges(scale = 4, alpha = 0.6)+
+  scale_fill_manual(values = wes_palette("Darjeeling2"))+
+  ylab("")+
+  theme_minimal()
+
+
+
+```
+
+```{r speed rock boxplot, echo = FALSE}
+##Boxplot
+ddG1_rock_All_speed %>% 
+  #group_by(Treatment)%>%
+  ggplot(aes(cells, speed, fill = cells))+
+  geom_boxplot(outlier.shape = NA,width=0.5,position = position_dodge(width=0.7))+
+  geom_point(position =position_jitterdodge(jitter.width = 0.1,dodge.width = 0.7))+
+  #geom_point()+
+  #geom_jitter()+
+  #scale_y_continuous(trans = "log2")+
+  scale_fill_manual(values = wes_palette("Darjeeling2"))+
+  #scale_color_manual(labels=c("CSS","FCS","Iso"),values=c("black","grey40","grey60"))+
+  #xlab("Stimulation")+
+  ylab("Speed (um/h) \n")+
+  theme_classic(base_family = "Times New Roman",base_size = 12)+
+  scale_x_discrete(labels=c("PC12Adh co","PC12Adh monoo","PC3GFP co", "PC3GFP mono"))+
+  #legend(legend = element_blank())+
+  theme(legend.position = "none",legend.text = element_text(margin = margin(r = 10, unit = "pt"),size = 14.5))+
+  theme(legend.title=element_blank())+
+  theme(axis.text.x=element_text(size=12,color="black"))+
+  theme(text=element_text(face="bold"))+
+  theme(axis.text.y=element_text(size=12,color="black"))
+```
+
+```{r speed rock table, echo = FALSE, warning = FALSE}
+library(DescTools)
+library(broom)
+
+test1 <- PostHocTest(aov(speed ~cells ,data = ddG1_rock_All_speed),method="hsd")
+#test1 <- DunnTest(speed ~ factor(cells) ,data = ddG1_rock_All_speed ,method="BH")
+test2 <- tidy(test1[[1]])
+test2 <- tidy(test2$x)
+test2 <- as.data.frame(test2$x)
+kbl(test2, booktabs = T) %>% 
+  kable_classic() %>% 
+  add_header_above(c("One-way ANOVA med Newman-Keuls post hoc test" = 5))
+
+```
+
+```{r Kruskal-Wallis rock,  echo=FALSE, warning = FALSE}
+D_test <- dunnTest(speed ~cells, data = ddG1_rock_All_speed, method = "holm")
+
+D_test <- as.data.frame(D_test$res)
+kbl(D_test, booktabs = T) %>% 
+  kable_classic() %>% 
+  add_header_above(c("Kruskal-Wallis rank sum test med Dunnet post hoc test" = 4))
+
+```
+
+
+```{r Max displacement rock, echo=FALSE}
+load("ddG1_rock_All_maxD")
+
+ggplot(ddG1_rock_All_maxD, aes(maxD, fill = cells), color = cells)+
+  geom_density(alpha = 0.4)+
+  #coord_cartesian(xlim = c(0,100))+
+  labs( x = " Max Displacement")+
+  theme_classic()
+
+
+
+```
+
+```{r Straightness rock, echo=FALSE}
+
+load("ddG1_rock_All_Snes ")
+
+ggplot(ddG1_rock_All_Snes, aes(Snes, fill = cells), color = cells)+
+  geom_density(alpha = 0.25)+
+  #coord_cartesian(xlim = c(0,100))+
+  labs( x = "Straigthness")+
+  theme_classic()
+
+
+
+
+```
+
+```{r Autocovarience rock, echo=FALSE}
+
+load("dot_G1_rock_Alldata")
+
+ggplot(dot_G1_rock_Alldata, aes(x = dt, y = mean, color = cells, fill = cells))+
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA)+
+  geom_line()+
+  geom_hline(yintercept = 0)+
+  labs(x = expression(paste(Delta, "t (hours)")),
+       y = "Autocovariance")+
+  coord_cartesian(xlim = c(0,1), ylim = c(0, 40))+
+  theme_classic()+
+  ggtitle("Autocovarience")+
+  theme(axis.line.x = element_blank(), plot.title = element_text(hjust = 0.5))
+
+```
+
+
+```{r Normalized Autocovarience rock, echo=FALSE}
+load("dotN_G1_rock_Alldata")
+
+ggplot(dotN_G1_rock_Alldata, aes(x = dt, y = mean, color = cells, fill = cells))+
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, color = NA)+
+  geom_line()+
+  geom_hline(yintercept = 0)+
+  labs(x = expression(paste(Delta, "t (hours)")),
+       y = "Autocovariance")+
+  coord_cartesian(xlim = c(0,2), ylim = c(0, 1))+
+  theme_classic()+
+  ggtitle("Normalized Autocovarience")+
+  theme(axis.line.x = element_blank(), plot.title = element_text(hjust = 0.5))
+
+
+
+
+```
