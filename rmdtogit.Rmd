@@ -1,6 +1,8 @@
 ---
 title: "markdown to got"
-output: html_document
+output: 
+  html_document:
+    keep_md: TRUE
 date: "2022-12-30"
 ---
 
